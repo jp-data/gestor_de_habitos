@@ -25,7 +25,7 @@ export async function appRoutes(app: FastifyInstance) {
                 title,
                 created_at: new Date(),
                 weekDays: {
-                    create: weekDays.map( weekDay => {
+                    create: weekDays.map(weekDay => {
                         return {
                             week_day: weekDay,
                         }
@@ -35,6 +35,55 @@ export async function appRoutes(app: FastifyInstance) {
         })
 
 
+    })
+
+    app.get('/day', async (request) => {
+        const getDayParams = z.object({
+            //convertendo o dado recebido em uma data
+            date: z.coerce.date()
+        })
+
+        const { date } = getDayParams.parse(request.query)
+
+        const parsedDate = dayjs(date).startOf('day')
+        const weekDay = parsedDate.get('day')
+        // const weekDay = dayjs(date).get('day')
+
+        console.log(date, weekDay)
+
+        //todos os hábitos possíveis do dia 
+        const possibleHabits = await prisma.habit.findMany({
+            where: {
+                created_at: {
+                    lte: date,
+                },
+                weekDays: {
+                    some: {
+                        week_day: weekDay,
+                    }
+                }
+            }
+        })
+        
+        // hábitos já completados
+        const day = await prisma.day.findUnique({
+            where: {
+                date: parsedDate.toDate(),
+            },
+            include: {
+                dayHabits: true
+            }
+        })
+
+        const completedHabits = day?.dayHabits.map(dayHabit => {
+            return dayHabit.habit_id
+        })
+
+        return {
+            possibleHabits,
+            completedHabits
+        
+        }
     })
 }
 
