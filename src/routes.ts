@@ -71,7 +71,7 @@ export async function appRoutes(app: FastifyInstance) {
                 date: parsedDate.toDate(),
             },
             include: {
-                dayHabits: true
+                dayHabits: true,
             }
         })
 
